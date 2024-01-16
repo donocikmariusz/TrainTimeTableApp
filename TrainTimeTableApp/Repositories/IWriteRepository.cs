@@ -9,6 +9,5 @@ namespace LokApp.Repositories
         void Add(T entity);
         void Remove(T entity);
         void Save();
-
     }
 }

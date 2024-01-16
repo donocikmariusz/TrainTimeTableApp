@@ -38,5 +38,5 @@ public class SqlRepository<T> : IRepository<T> where T : class, IEntity, new()
     {
         _dbContext.SaveChanges();
     }
-    
+  
 }

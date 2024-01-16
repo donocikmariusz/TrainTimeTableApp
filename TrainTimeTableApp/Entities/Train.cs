@@ -1,9 +1,8 @@
 ﻿
 namespace LokApp.Entities
 {
-    public class Train : IEntity
+    public class Train : EntityBase
     {
-        public int Id { get; set; }
         public int? Number { get; set; }
         public string? From { get; set; }
         public string? To { get; set; }
