@@ -1,72 +1,124 @@
-﻿using LokApp.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text.Json;
+using LokApp.Data;
 using LokApp.Entities;
 using LokApp.Repositories;
-using System.Globalization;
 using TrainTimeTableApp.Repositories.Extensions;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var trainRepository = new SqlRepository<Train>(new TrainAppDbContext(), TrainAdded);
+        var trainRepository = new FileRepository<Train>("trains.txt");
         trainRepository.ItemAdded += TrainRepositoryOnItemAdded;
+        trainRepository.ItemRemoved += TrainRepositoryOnItemRemoved;
 
-        static void TrainRepositoryOnItemAdded(object? sender, Train e)
+        while (true)
         {
-            Console.WriteLine($"Train added => {e.Number} from {sender?.GetType().Name}");
-        }
+            Console.WriteLine("App do wyświetlania tablicowego rozkłądu pociągów: ");
+            Console.WriteLine("1. Dodaj pociąg");
+            Console.WriteLine("2. Usuń pociąg");
+            Console.WriteLine("3. Pokaż wszystkie pociągi");
+            Console.WriteLine("0. Wyjdź");
 
-        AddTrain(trainRepository);
-        WriteAllToConsole(trainRepository);
+            Console.Write("Wybierz opcję: ");
+            var choice = Console.ReadLine();
 
-        static void TrainAdded(Train item)
-        {
-            Console.WriteLine($"{item.Number} added");
-        }
-
-
-        static void AddTrain(IRepository<Train> trainRepository)
-        {
-
-            var trains = new[]
+            switch (choice)
             {
-
-            new Train { Number = 38103 },
-            new Train { Number = 222 },
-            new Train { Number = 234 }
-
-            };
-            trainRepository.AddBatch(trains);
-
+                case "1":
+                    AddTrain(trainRepository);
+                    trainRepository.Save();
+                    break;
+                case "2":
+                    RemoveTrain(trainRepository);
+                    trainRepository.Save();
+                    break;
+                case "3":
+                    WriteAllToConsole(trainRepository);
+                    break;
+                case "0":
+                    return;
+                default:
+                    Console.WriteLine("Nieprawidłowy wybór. Spróbuj ponownie.");
+                    break;
+            }
         }
-
-        /*
-        repository.Add(new Train
-        {
-            Id = 1,
-            Number = 38103,
-            From = "Warszawa",
-            ArrivalTime = new DateTime(1, 1, 1, 5, 34, 0),
-            To = "Kraków",
-            DepartureTime = new DateTime(1, 1, 1, 5, 55, 0),
-            Platform = "3",
-            Track = "5"
-        });
-        */
-
     }
 
+    static void TrainRepositoryOnItemAdded(object? sender, Train e)
+    {
+        Console.WriteLine($"Train id {e.Id}, number: {e.Number} from: {e.From} to: {e.To} got from {sender?.GetType().Name}, Date: {DateTime.Now} Train added");
+    }
+
+    static void TrainRepositoryOnItemRemoved(object? sender, Train e)
+    {
+        Console.WriteLine($"Train id {e.Id}, number: {e.Number} from: {e.From} to: {e.To} got from {sender?.GetType().Name}, Date: {DateTime.Now} Train removed");
+    }
+
+
+    static void AddTrain(IRepository<Train> trainRepository)
+    {
+        Console.Write("Podaj numer pociągu: ");
+        var number = int.Parse(Console.ReadLine() ?? "0");
+
+        Console.Write("Podaj stację początkową: ");
+        var fromStation = Console.ReadLine();
+
+        Console.Write("Podaj stację końcową: ");
+        var toStation = Console.ReadLine();
+
+        try
+        {
+            trainRepository.Add(new Train
+            {
+                Number = number,
+                From = fromStation,
+                To = toStation,
+            });
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Exception catch: {e.Message}");
+        }
+    }
+
+
+    static void RemoveTrain(IRepository<Train> trainRepository)
+    {
+        Console.Write("Podaj id pociągu do usunięcia: ");
+        var id = int.Parse(Console.ReadLine() ?? "0");
+
+        var train = trainRepository.GetById(id);
+
+        if (train != null)
+        {
+            trainRepository.Remove(train);
+
+        }
+        else
+        {
+            Console.WriteLine($"Pociąg o id {id} nie został znaleziony.");
+        }
+    }
 
     static void WriteAllToConsole(IReadRepository<IEntity> repository)
     {
         var items = repository.GetAll();
-        foreach (var item in items)
+
+        if (items.Any())
         {
-            Console.WriteLine(item);
+            foreach (var item in items)
+            {
+                Console.WriteLine(item);
+            }
+        }
+        else
+        {
+            Console.WriteLine("The list is empty.");
         }
     }
 }
-
-
-
-
